@@ -16,18 +16,10 @@ const registry = [
   {
       type: 'function',
       function: {
-        name: 'chat',
-        description: 'Send a message to chat',
-        parameters: {
-          type: 'object',
-          properties: {
-            message: { type: 'string' }
-          },
-          required: ['message']
-        }
+        name: 'stop',
+        description: 'Stop what is doing'
       }
-  },
-
+  }
 ]
 
 module.exports = { registry }

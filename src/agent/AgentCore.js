@@ -27,29 +27,47 @@ class AgentCore {
 
   async actionAi(prompt) {
     try {
-      const { default: ollama } = require('ollama')
+      const { GoogleGenAI } = require('@google/genai')
       const tools = registry
-      const prevChat = this.recall('chat') || []
-      const newChat = prevChat.concat({role: 'user', content: prompt})
-      this.remember('chat', newChat)
       
-      const response = await ollama.chat({
-        model: 'functiongemma:latest',
-        tools,
-        options: { temperature: 0 },
-        messages: newChat,
+      const ai = new GoogleGenAI({})
+      
+      // Convert tools to Gemini format
+      const geminiTools = tools.map(tool => ({
+        name: tool.function.name,
+        description: tool.function.description,
+        parameters: tool.function.parameters
+      }))
+      
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        tools: [{ functionDeclarations: geminiTools }]
       });
-      if (response.message.tool_calls?.length) {
-        let tool_calls = []
-        for (const call of response.message.tool_calls) {
-          const { name, arguments: args } = call.function
-          tool_calls.push({ name, args })
+      
+      if (response.candidates && response.candidates[0] && response.candidates[0].content) {
+        const candidate = response.candidates[0]
+        if (candidate.content.parts && candidate.content.parts[0]) {
+          const part = candidate.content.parts[0]
+          if (part.functionCall) {
+            const tool_calls = [{
+              name: part.functionCall.name,
+              args: part.functionCall.args
+            }]
+            return tool_calls
+          }
+          if (part.text) {
+            console.log('AI Response:', part.text)
+            return []
+          }
         }
-        console.log(tool_calls)
-        return tool_calls
       }
-      this.remember('chat', newChat.concat({role: 'assistant', content: response.message.content}))
-      return response.message.content
+      
+      return []
     } catch (error) {
       console.error('AI Error:', error.message)
       return 'Sorry, I had trouble processing that request.'

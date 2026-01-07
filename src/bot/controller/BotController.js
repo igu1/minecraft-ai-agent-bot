@@ -109,11 +109,26 @@ class BotController {
     try {
       const calls = await this.agent.actionAi(prompt)
       if (Array.isArray(calls) && calls && calls.length > 0) {
-        calls.map(call => call.name == 'chat' ? this.bot.chat(call.args['message']) : console.log(call.name, call.args.toString()))
+        calls.map(call => this.handleToolCall(call))
       }
     } catch (error) {
       console.error('AI processing failed:', error.message)
       this.bot.chat('Sorry, I had trouble understanding that.')
+    }
+  }
+
+  handleToolCall(func) {
+    console.log(func.name, " From here")
+    if (func.name == 'stop') {
+      console.log("Current Task is about to stop", this.agent.currentTask)
+      this.agent.currentTask.stop()
+    }
+
+    const tools = this.pathfinder.getTools()
+    if (tools[func.name]) {
+      tools[func.name].execute(func.args)
+    } else {
+      console.error(`Tool ${func.name} not found`)
     }
   }
 

@@ -1,20 +1,20 @@
-const { GoalNear } = require('mineflayer-pathfinder').goals
+const BaseAction = require("../BaseAction")
+const FollowAction = require("./action/follow")
 
-class PathFinder {
+class PathFinder extends BaseAction {
   constructor(bot) {
-    this.bot = bot
+    super(bot);
+    this.bot = bot;
+    this.fw = new FollowAction(this.bot)
   }
 
-  async goTo(position) {
-    try {
-      const goal = new GoalNear(position.x, position.y, position.z, 1)
-      await this.bot.pathfinder.goto(goal)
-      return true
-    } catch (error) {
-      console.error('Pathfinding failed:', error.message)
-      throw error
+  getTools() {
+    const registry = {
+      follow: this.fw,
     }
+    return registry
   }
+
 }
 
 module.exports = PathFinder
