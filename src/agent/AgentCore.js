@@ -40,6 +40,7 @@ class AgentCore {
       this.currentTask.stop()
     }
     this.currentTask = null
+    this.currentTaskCall = null
     this.state = 'idle'
   }
 

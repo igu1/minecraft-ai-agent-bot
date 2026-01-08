@@ -1,16 +1,16 @@
 const BaseProvider = require('./BaseProvider')
 
-class LiteLLMProvider extends BaseProvider {
+class GroqProvider extends BaseProvider {
   constructor(config) {
     super()
     this.config = config
-    this.litellm = null
+    this.groq = null
   }
 
   async chat(prompt, tools) {
-    if (!this.litellm) {
-      const { default: litellm } = await import('litellm')
-      this.litellm = litellm
+    if (!this.groq) {
+      const Groq = await import('groq-sdk')
+      this.groq = new Groq.default({ apiKey: this.config.apiKey })
     }
 
     const functionDeclarations = tools.map(tool => ({
@@ -28,13 +28,12 @@ class LiteLLMProvider extends BaseProvider {
     ]
 
     try {
-      const response = await this.litellm.completion({
-        model: this.config.model,
+      const response = await this.groq.chat.completions.create({
+        model: 'llama-3.1-8b-instant',
         messages,
         tools: functionDeclarations,
         tool_choice: 'auto',
-        temperature: this.config.temperature || 0,
-        api_key: this.config.apiKey
+        temperature: this.config.temperature || 0
       })
 
       const toolCalls = response.choices[0].message.tool_calls
@@ -47,10 +46,10 @@ class LiteLLMProvider extends BaseProvider {
 
       return response.choices[0].message.content
     } catch (error) {
-      console.error('LiteLLM Error:', error.message)
+      console.error('Groq Error:', error.message)
       throw error
     }
   }
 }
 
-module.exports = LiteLLMProvider
+module.exports = GroqProvider

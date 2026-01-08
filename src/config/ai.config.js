@@ -1,5 +1,5 @@
 module.exports = {
-  provider: 'ollama',
+  provider: 'groq',
   
   ollama: {
     model: 'functiongemma:latest',
@@ -17,6 +17,12 @@ module.exports = {
   litellm: {
     model: 'gpt-4o-mini',
     apiKey: process.env.OPENAI_API_KEY,
+    temperature: 0
+  },
+  
+  groq: {
+    model: 'llama-3.1-8b-instant',
+    apiKey: process.env.GROQ_API_KEY,
     temperature: 0
   }
 }

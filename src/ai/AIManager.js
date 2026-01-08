@@ -1,6 +1,7 @@
 const OllamaProvider = require('./providers/OllamaProvider')
 const GeminiProvider = require('./providers/GeminiProvider')
 const LiteLLMProvider = require('./providers/LiteLLMProvider')
+const GroqProvider = require('./providers/GroqProvider')
 const aiConfig = require('../config/ai.config')
 
 class AIManager {
@@ -17,6 +18,8 @@ class AIManager {
       return new GeminiProvider(aiConfig.gemini)
     } else if (provider === 'litellm') {
       return new LiteLLMProvider(aiConfig.litellm)
+    } else if (provider === 'groq') {
+      return new GroqProvider(aiConfig.groq)
     }
 
     throw new Error(`Unknown AI provider: ${provider}`)

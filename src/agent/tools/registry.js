@@ -11,7 +11,7 @@ const registry = [
           distance: { type: 'number' },
           duration: { type: 'number' }
         },
-        required: ['user_id', 'distance']
+        required: ['user_id', 'distance', 'duration']
       }
     }
   },

@@ -74,16 +74,22 @@ class BotController {
     let task;
     if (this.agent.tasks.length > 0 && !this.agent.currentTask) {
       task = this.agent.tasks.shift()
+      console.log(`📋 Processing next task: ${task.name}, remaining: ${this.agent.tasks.length}`)
       this.handleToolCall(task)
       this.timer = 0
     }
 
     const currentTaskCall = this.agent.currentTaskCall
-    if (currentTaskCall && currentTaskCall.args && currentTaskCall.args.duration && this.timer >= currentTaskCall.args.duration) {
-      this.agent.stopCurrentTask()
-      this.timer = 0;
+    if (currentTaskCall && currentTaskCall.args && currentTaskCall.args.duration) {
+      this.timer++
+      if (this.timer >= currentTaskCall.args.duration) {
+        console.log(`⏱️ Task duration completed for: ${currentTaskCall.name} (${this.timer}s)`)
+        this.agent.stopCurrentTask()
+        this.timer = 0
+      }
+    } else if (!this.agent.currentTask && this.agent.tasks.length === 0) {
+      this.timer = 0
     }
-    this.timer++
   }
 
   async handleChatMessage(username, message) {
@@ -122,6 +128,13 @@ class BotController {
         } else if (result) {
           if (result.success) {
             this.bot.chat(`✅ ${result.message || 'Done!'}`)
+          }
+          if (!func.args || !func.args.duration) {
+            this.agent.stopCurrentTask()
+          }
+        } else {
+          if (!func.args || !func.args.duration) {
+            this.agent.stopCurrentTask()
           }
         }
       } catch (error) {
