@@ -1,8 +1,7 @@
-
-class Action {
+class BaseAction {
   constructor(bot, agent = null) {
-    if (this.constructor === Action) {
-      throw new Error("Action is an abstract class and cannot be instantiated directly")
+    if (this.constructor === BaseAction) {
+      throw new Error("BaseAction is abstract and cannot be instantiated")
     }
     this.bot = bot
     this.agent = agent
@@ -14,15 +13,15 @@ class Action {
   }
 
   async execute(...args) {
-    throw new Error("execute method must be implemented by subclass")
+    throw new Error("execute method must be implemented")
   }
 
   stop() {
-    throw new Error("stop method must be implemented by subclass")
+    throw new Error("stop method must be implemented")
   }
 
   getStatus() {
-    throw new Error("getStatus method must be implemented by subclass")
+    throw new Error("getStatus method must be implemented")
   }
 
   setState(state) {
@@ -46,4 +45,4 @@ class Action {
   }
 }
 
-module.exports = Action
+module.exports = BaseAction

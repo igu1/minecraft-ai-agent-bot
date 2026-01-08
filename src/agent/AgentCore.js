@@ -1,4 +1,5 @@
-const { registry } = require('./Tools')
+const AIManager = require('../ai/AIManager')
+const { registry } = require('./tools/registry')
 
 class AgentCore {
   constructor(bot) {
@@ -7,6 +8,7 @@ class AgentCore {
     this.state = 'idle'
     this.memory = new Map()
     this.tasks = []
+    this.ai = new AIManager()
   }
 
   async think() {
@@ -22,7 +24,6 @@ class AgentCore {
     this.currentTask = null
   }
 
-  // ? Task management
   addTask(task) {
     this.tasks.push(task)
   }
@@ -50,7 +51,6 @@ class AgentCore {
     return this.state
   }
 
-  // ? Memory management
   remember(key, value) {
     this.memory.set(key, value)
   }
@@ -67,40 +67,11 @@ class AgentCore {
     this.memory.clear()
   }
 
-  // ? AI management
   async actionAi(prompt) {
-    try {
-      const { default: ollama } = require('ollama')
-      const tools = registry
-      
-      const response = await ollama.chat({
-        model: 'functiongemma:latest',
-        tools,
-        options: { temperature: 0 },
-        messages: [{role: 'user', content: prompt}],
-      });
-      
-      if (response.message.tool_calls?.length) {
-        let tool_calls = []
-        for (const call of response.message.tool_calls) {
-          const { name, arguments: args } = call.function
-          tool_calls.push({ name, args })
-        }
-        //! TODO: FINETUNE THE AI
-        return [
-          {name: 'follow', args: {user_id: 'Eza', distance: 2, duration: 30}},
-        ]
-      
-      }
-      
-      return response.message.content
-    } catch (error) {
-      console.error('AI Error:', error.message)
-      return 'Sorry, I had trouble processing that request.'
-    }
+    return await this.ai.chat(prompt, registry)
   }
 
-  getStatus(){
+  getStatus() {
     return {
       state: this.state,
       currentTask: this.currentTask,

@@ -1,19 +1,19 @@
 const registry = [
   {
-      type: 'function',
-      function: {
-        name: 'follow',
-        description: 'Follow a user by ID',
-        parameters: {
-          type: 'object',
-          properties: {
-            user_id: { type: 'string' },
-            distance: { type: 'number' },
-            duration: { type: 'number' }
-          },
-          required: ['user_id', 'distance']
-        }
+    type: 'function',
+    function: {
+      name: 'follow',
+      description: 'Follow a user by ID',
+      parameters: {
+        type: 'object',
+        properties: {
+          user_id: { type: 'string' },
+          distance: { type: 'number' },
+          duration: { type: 'number' }
+        },
+        required: ['user_id', 'distance']
       }
+    }
   },
   {
     type: 'function',

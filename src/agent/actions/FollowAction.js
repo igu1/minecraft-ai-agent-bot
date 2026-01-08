@@ -1,7 +1,7 @@
 const { GoalNear } = require('mineflayer-pathfinder').goals
-const Action = require('../Action')
+const BaseAction = require('./BaseAction')
 
-class FollowAction extends Action {
+class FollowAction extends BaseAction {
   constructor(bot, agent = null) {
     super(bot, agent)
     this.target = null

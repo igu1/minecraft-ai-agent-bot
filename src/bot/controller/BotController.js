@@ -1,21 +1,13 @@
 const AgentCore = require('../../agent/AgentCore')
-const BehaviorEngine = require('../../agent/behavior/BehaviorEngine')
-const PathFinder = require('../../agent/pathfinding/PathFinder')
-const CombatSystem = require('../../agent/combat/CombatSystem')
-const InventoryManager = require('../../agent/inventory/InventoryManager')
-const { goals: { GoalNear } } = require('mineflayer-pathfinder')
-const { logging } = require('../../../config/bot.config')
-const { registry } = require('../../agent/Tools')
-const { generate_prompt } = require('../../agent/Prompt')
+const ActionManager = require('../../agent/ActionManager')
+const { registry } = require('../../agent/tools/registry')
+const { generatePrompt } = require('../../utils/prompt')
 
 class BotController {
   constructor(bot) {
     this.bot = bot
     this.agent = new AgentCore(bot)
-    this.behaviorEngine = new BehaviorEngine(this.agent)
-    this.pathfinder = new PathFinder(bot, this.agent)
-    this.combat = new CombatSystem(bot)
-    this.inventory = new InventoryManager(bot, this.agent)
+    this.actionManager = new ActionManager(bot, this.agent)
     
     this.isRunning = false
     this.tickInterval = null
@@ -95,13 +87,12 @@ class BotController {
   }
 
   async handleChatMessage(username, message) {
-    const tools = registry
-    const prompt = generate_prompt(username, message, tools)
+    const prompt = generatePrompt(username, message, registry)
     
     try {
       const calls = await this.agent.actionAi(prompt)
       if (Array.isArray(calls) && calls && calls.length > 0) {
-        calls.map(call => this.agent.addTask(call))
+        calls.forEach(call => this.agent.addTask(call))
       }
     } catch (error) {
       console.error('AI processing failed:', error.message)
@@ -109,27 +100,29 @@ class BotController {
     }
   }
 
-  handleToolCall(func) {
+  async handleToolCall(func) {
     if (!func || !func.name) {
       console.error('Invalid tool call: func is null or missing name')
       return
     }
 
-    let tools = {}
-    tools = {...tools, ...this.pathfinder.getTools()}
-    tools = {...tools, ...this.inventory.getTools()}
-    
-    if (tools[func.name]) {
+    const action = this.actionManager.getAction(func.name)
+    console.log(`Executing tool call: ${func.name}`)
+    if (action) {
       try {
-        const tool = tools[func.name]
-        this.agent.setTask(func, tool)
-        let result = tool.execute(func.args) 
+        this.agent.setTask(func, action)
+        const result = await action.execute(func.args)
+        console.log(result)
         if (result && result.catch) {
           result.catch(error => {
             console.error('Tool execution error:', error.message)
             this.bot.chat(`💔 Something went wrong! ${this.getFriendlyErrorMessage(error.message)}`)
             this.agent.stopCurrentTask()
           })
+        } else if (result) {
+          if (result.success) {
+            this.bot.chat(`✅ ${result.message || 'Done!'}`)
+          }
         }
       } catch (error) {
         console.error('Tool call error:', error.message)
@@ -172,8 +165,7 @@ class BotController {
       health: this.bot.health,
       hunger: this.bot.food,
       position: this.bot.entity.position,
-      combatMode: this.combat.combatMode,
-      currentTask: this.agent.currentTask?.type || 'none'
+      currentTask: this.agent.currentTask?.constructor.name || 'none'
     }
   }
 }
