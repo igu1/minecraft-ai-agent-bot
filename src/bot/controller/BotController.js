@@ -19,6 +19,7 @@ class BotController {
     
     this.isRunning = false
     this.tickInterval = null
+    this.timer = 0
   }
 
   async start() {
@@ -26,7 +27,6 @@ class BotController {
     
     this.isRunning = true
     console.log('Bot controller started')
-    
     this.setupEventHandlers()
     this.startMainLoop()
   }
@@ -46,6 +46,7 @@ class BotController {
   setupEventHandlers() {
     this.bot.on('chat', (username, message) => {
       if (username === this.bot.username) return
+      if (message.startsWith('/'))
       this.handleChatMessage(username, message)
     })
 
@@ -78,11 +79,19 @@ class BotController {
   }
 
   async tick() {
+    let task;
     if (this.agent.tasks.length > 0 && !this.agent.currentTask) {
-      const task = this.agent.tasks.shift()
-      this.agent.setTask(task)
+      task = this.agent.tasks.shift()
       this.handleToolCall(task)
+      this.timer = 0
     }
+
+    const currentTaskCall = this.agent.currentTaskCall
+    if (currentTaskCall && currentTaskCall.args && currentTaskCall.args.duration && this.timer >= currentTaskCall.args.duration) {
+      this.agent.stopCurrentTask()
+      this.timer = 0;
+    }
+    this.timer++
   }
 
   async handleChatMessage(username, message) {
@@ -106,12 +115,6 @@ class BotController {
       return
     }
 
-    if (func.name == 'idle') {
-      this.agent.currentTask.stop()
-      this.bot.chat("😌 Just chilling here!")
-      return
-    }
-
     let tools = {}
     tools = {...tools, ...this.pathfinder.getTools()}
     tools = {...tools, ...this.inventory.getTools()}
@@ -119,7 +122,7 @@ class BotController {
     if (tools[func.name]) {
       try {
         const tool = tools[func.name]
-        this.agent.setTask(tool)
+        this.agent.setTask(func, tool)
         let result = tool.execute(func.args) 
         if (result && result.catch) {
           result.catch(error => {
@@ -139,43 +142,28 @@ class BotController {
     }
   }
 
-  getFriendlyErrorMessage(technicalError) {
+  getFriendlyErrorMessage(error) {
     const errorMap = {
-      'Player not found': "I can't find that player. Make sure they're nearby!",
-      'Path was stopped': "I got stuck trying to move. There might be obstacles in the way.",
-      'Item not found': "I can't find that item around here.",
-      'Insufficient ingredients': "I don't have enough materials to craft that.",
-      'No recipe found': "I don't know how to craft that item.",
-      'Inventory full': "My inventory is too full to pick that up."
+      'Player not found': "I can't find that player. Are they nearby?",
+      'No path found': "I can't reach that location. There might be something in the way.",
+      'Item not found': "I don't have that item.",
+      'Inventory full': "My inventory is full. I can't pick up more items.",
+      'Invalid coordinates': "Those coordinates don't seem right.",
+      'Permission denied': "I don't have permission to do that.",
+      'Timeout': "That took too long. Let me try something else."
     }
     
-    for (const [technical, friendly] of Object.entries(errorMap)) {
-      if (technicalError.includes(technical)) {
-        return friendly
-      }
-    }
-    
-    return "Something unexpected happened. Please try again!"
+    return errorMap[error] || "Something went wrong. Let me try again!"
   }
 
   handleDeath() {
-    this.agent.currentTask = null
-    this.agent.state = 'dead'
-    this.combat.combatMode = false
-    this.combat.target = null
+    this.agent.stopCurrentTask()
+    this.agent.clearMemory()
+    this.bot.chat("💀 Oops! I died. Let me get back to work...")
   }
 
-  async handleLowHealth() {
-    const food = this.bot.inventory.items().find(item => 
-      item.name.includes('bread') || 
-      item.name.includes('apple') ||
-      item.name.includes('carrot')
-    )
-    
-    if (food) {
-      await this.bot.equip(food, 'hand')
-      await this.bot.consume()
-    }
+  handleLowHealth() {
+    this.bot.chat("❤️ I'm feeling weak! I should be careful...")
   }
 
   getStatus() {

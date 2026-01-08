@@ -27,9 +27,10 @@ class AgentCore {
     this.tasks.push(task)
   }
 
-  setTask(task) {
+  setTask(toolCall, actionObject) {
     this.stopCurrentTask()
-    this.currentTask = task
+    this.currentTask = actionObject
+    this.currentTaskCall = toolCall
     this.state = 'working'
   }
 
@@ -86,7 +87,11 @@ class AgentCore {
           tool_calls.push({ name, args })
         }
         //! TODO: FINETUNE THE AI
-        return [{name: 'follow', args: {user_id: 'Eza', distance: 20, duration: 10}}]
+        return [
+          {name: 'nearby_items', args: { radius: 6, duration: 20}},
+          {name: 'follow', args: {user_id: 'Eza', distance: 4, duration: 10}},
+          {name: 'follow', args: {user_id: 'Eza', distance: 20, duration: 30}},
+        ]
       
       }
       

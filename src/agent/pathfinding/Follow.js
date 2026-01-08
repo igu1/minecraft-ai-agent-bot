@@ -42,7 +42,7 @@ class FollowAction extends Action {
     
     try {
       const goal = new GoalNear(this.target.position.x, this.target.position.y, this.target.position.z, distance)
-      await this.bot.pathfinder.goto(goal)
+      this.bot.pathfinder.setGoal(goal)
     } catch (error) {
       console.error('Follow failed:', error.message)
       this.bot.chat(`🚧 Oops! I'm having trouble reaching ${this.target.username}. There might be something in the way.`)
