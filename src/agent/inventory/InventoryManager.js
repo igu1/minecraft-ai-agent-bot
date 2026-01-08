@@ -1,8 +1,37 @@
-class InventoryManager {
-  constructor(bot) {
+const BaseAction = require("../BaseAction")
+const GetItem = require("./GetItem")
+const NearbyItems = require("./NearbyItems")
+const AllItems = require("./AllItems")
+const DropItem = require("./DropItem")
+const SortInventory = require("./SortInventory")
+const CraftItem = require("./CraftItem")
+
+class InventoryManager extends BaseAction {
+  constructor(bot, agent = null) {
+    super(bot, agent)
     this.bot = bot
+    this.agent = agent
     this.desiredItems = new Map()
     this.sortingRules = new Map()
+    
+    this.getItem = new GetItem(this.bot, this.agent)
+    this.nearbyItems = new NearbyItems(this.bot, this.agent)
+    this.allItems = new AllItems(this.bot, this.agent)
+    this.dropItem = new DropItem(this.bot, this.agent)
+    this.sortInventory = new SortInventory(this.bot, this.agent)
+    this.craftItem = new CraftItem(this.bot, this.agent)
+  }
+
+  getTools() {
+    const registry = {
+      get_item: this.getItem,
+      nearby_items: this.nearbyItems,
+      all_items: this.allItems,
+      drop_item: this.dropItem,
+      sort_inventory: this.sortInventory,
+      craft_item: this.craftItem
+    }
+    return registry
   }
 
   addItemGoal(itemName, quantity, priority = 1) {

@@ -1,4 +1,3 @@
-require('dotenv').config()
 const mineflayer = require('mineflayer')
 const config = require('./config/bot.config')
 const BotController = require('./src/bot/controller/BotController')

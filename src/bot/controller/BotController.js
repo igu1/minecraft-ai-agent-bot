@@ -13,9 +13,9 @@ class BotController {
     this.bot = bot
     this.agent = new AgentCore(bot)
     this.behaviorEngine = new BehaviorEngine(this.agent)
-    this.pathfinder = new PathFinder(bot)
+    this.pathfinder = new PathFinder(bot, this.agent)
     this.combat = new CombatSystem(bot)
-    this.inventory = new InventoryManager(bot)
+    this.inventory = new InventoryManager(bot, this.agent)
     
     this.isRunning = false
     this.tickInterval = null
@@ -118,18 +118,57 @@ class BotController {
   }
 
   handleToolCall(func) {
-    console.log(func.name, " From here")
-    if (func.name == 'stop') {
-      console.log("Current Task is about to stop", this.agent.currentTask)
-      this.agent.currentTask.stop()
+    if (func.name == 'idle') {
+      this.agent.stopCurrentTask()
+      this.bot.chat("😌 Just chilling here!")
+      return
     }
 
-    const tools = this.pathfinder.getTools()
+    let tools = {}
+    tools = {...tools, ...this.pathfinder.getTools()}
+    tools = {...tools, ...this.inventory.getTools()}
+    
     if (tools[func.name]) {
-      tools[func.name].execute(func.args)
+      try {
+        const tool = tools[func.name]
+        this.agent.setTask(tool)
+        const result = tool.execute(func.args)
+        
+        if (result && result.catch) {
+          result.catch(error => {
+            console.error('Tool execution error:', error.message)
+            this.bot.chat(`💔 Something went wrong! ${this.getFriendlyErrorMessage(error.message)}`)
+            this.agent.stopCurrentTask()
+          })
+        }
+      } catch (error) {
+        console.error('Tool call error:', error.message)
+        this.bot.chat(`💔 Oops! ${this.getFriendlyErrorMessage(error.message)}`)
+        this.agent.stopCurrentTask()
+      }
     } else {
       console.error(`Tool ${func.name} not found`)
+      this.bot.chat(`🤔 I don't know how to do that. Try asking me something else!`)
     }
+  }
+
+  getFriendlyErrorMessage(technicalError) {
+    const errorMap = {
+      'Player not found': "I can't find that player. Make sure they're nearby!",
+      'Path was stopped': "I got stuck trying to move. There might be obstacles in the way.",
+      'Item not found': "I can't find that item around here.",
+      'Insufficient ingredients': "I don't have enough materials to craft that.",
+      'No recipe found': "I don't know how to craft that item.",
+      'Inventory full': "My inventory is too full to pick that up."
+    }
+    
+    for (const [technical, friendly] of Object.entries(errorMap)) {
+      if (technicalError.includes(technical)) {
+        return friendly
+      }
+    }
+    
+    return "Something unexpected happened. Please try again!"
   }
 
   handleDeath() {
