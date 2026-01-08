@@ -6,6 +6,7 @@ class AgentCore {
     this.currentTask = null
     this.state = 'idle'
     this.memory = new Map()
+    this.tasks = []
   }
 
   async think() {
@@ -21,10 +22,13 @@ class AgentCore {
     this.currentTask = null
   }
 
+  // ? Task management
+  addTask(task) {
+    this.tasks.push(task)
+  }
+
   setTask(task) {
-    if (this.currentTask && this.currentTask.stop) {
-      this.currentTask.stop()
-    }
+    this.stopCurrentTask()
     this.currentTask = task
     this.state = 'working'
   }
@@ -45,6 +49,7 @@ class AgentCore {
     return this.state
   }
 
+  // ? Memory management
   remember(key, value) {
     this.memory.set(key, value)
   }
@@ -61,6 +66,7 @@ class AgentCore {
     this.memory.clear()
   }
 
+  // ? AI management
   async actionAi(prompt) {
     try {
       const { default: ollama } = require('ollama')
@@ -80,7 +86,7 @@ class AgentCore {
           tool_calls.push({ name, args })
         }
         //! TODO: FINETUNE THE AI
-        return [{name: 'follow', args: {user_id: 'Eza'}}, {name: 'idle', args: {}}]
+        return [{name: 'follow', args: {user_id: 'Eza', distance: 20, duration: 10}}]
       
       }
       
@@ -88,6 +94,15 @@ class AgentCore {
     } catch (error) {
       console.error('AI Error:', error.message)
       return 'Sorry, I had trouble processing that request.'
+    }
+  }
+
+  getStatus(){
+    return {
+      state: this.state,
+      currentTask: this.currentTask,
+      memory: this.memory,
+      tasks: this.tasks
     }
   }
 }

@@ -7,9 +7,11 @@ const registry = [
         parameters: {
           type: 'object',
           properties: {
-            user_id: { type: 'string' }
+            user_id: { type: 'string' },
+            distance: { type: 'number' },
+            duration: { type: 'number' }
           },
-          required: ['user_id']
+          required: ['user_id', 'distance']
         }
       }
   },

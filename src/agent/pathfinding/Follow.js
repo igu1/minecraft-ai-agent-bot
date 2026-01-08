@@ -9,10 +9,10 @@ class FollowAction extends Action {
   }
 
   async execute(args) {
-    return await this.follow(args.user_id)
+    return await this.follow(args.user_id, args.distance, args.duration)
   }
 
-  async follow(userId) {
+  async follow(userId, distance, duration) {
     this.stop()
     
     const target = this.bot.players[userId]?.entity
@@ -29,19 +29,19 @@ class FollowAction extends Action {
     this.bot.chat(`✅ Now following ${target.username}!`)
     
     this.interval = setInterval(() => {
-      if (!this.target || this.bot.entity.position.distanceTo(this.target.position) > 3) {
-        this.move()
+      if (!this.target || this.bot.entity.position.distanceTo(this.target.position) > distance) {
+        this.move(distance)
       }
     }, 1000)
     
     return { success: true, target: target.username }
   }
 
-  async move() {
+  async move(distance) {
     if (!this.target || this.bot.pathfinder.isMoving()) return
     
     try {
-      const goal = new GoalNear(this.target.position.x, this.target.position.y, this.target.position.z, 3)
+      const goal = new GoalNear(this.target.position.x, this.target.position.y, this.target.position.z, distance)
       await this.bot.pathfinder.goto(goal)
     } catch (error) {
       console.error('Follow failed:', error.message)

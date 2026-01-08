@@ -78,28 +78,11 @@ class BotController {
   }
 
   async tick() {
-    if (this.combat.combatMode) {
-      await this.combat.defend()
-      return
+    if (this.agent.tasks.length > 0 && !this.agent.currentTask) {
+      const task = this.agent.tasks.shift()
+      this.agent.setTask(task)
+      this.handleToolCall(task)
     }
-
-    if (this.agent.currentTask) {
-      try {
-        const completed = await this.agent.currentTask.execute()
-        if (completed) {
-          this.agent.currentTask = null
-          this.agent.state = 'idle'
-        }
-      } catch (error) {
-        console.error('Task execution failed:', error.message)
-        this.agent.currentTask = null
-        this.agent.state = 'idle'
-      }
-    } else {
-      await this.behaviorEngine.executeBestBehavior()
-    }
-    
-    await this.inventory.organizeInventory()
   }
 
   async handleChatMessage(username, message) {
@@ -109,7 +92,7 @@ class BotController {
     try {
       const calls = await this.agent.actionAi(prompt)
       if (Array.isArray(calls) && calls && calls.length > 0) {
-        calls.map(call => this.handleToolCall(call))
+        calls.map(call => this.agent.addTask(call))
       }
     } catch (error) {
       console.error('AI processing failed:', error.message)
@@ -118,8 +101,13 @@ class BotController {
   }
 
   handleToolCall(func) {
+    if (!func || !func.name) {
+      console.error('Invalid tool call: func is null or missing name')
+      return
+    }
+
     if (func.name == 'idle') {
-      this.agent.stopCurrentTask()
+      this.agent.currentTask.stop()
       this.bot.chat("😌 Just chilling here!")
       return
     }
@@ -132,8 +120,7 @@ class BotController {
       try {
         const tool = tools[func.name]
         this.agent.setTask(tool)
-        const result = tool.execute(func.args)
-        
+        let result = tool.execute(func.args) 
         if (result && result.catch) {
           result.catch(error => {
             console.error('Tool execution error:', error.message)
