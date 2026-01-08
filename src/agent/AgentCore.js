@@ -88,9 +88,7 @@ class AgentCore {
         }
         //! TODO: FINETUNE THE AI
         return [
-          {name: 'nearby_items', args: { radius: 6, duration: 20}},
-          {name: 'follow', args: {user_id: 'Eza', distance: 4, duration: 10}},
-          {name: 'follow', args: {user_id: 'Eza', distance: 20, duration: 30}},
+          {name: 'follow', args: {user_id: 'Eza', distance: 2, duration: 30}},
         ]
       
       }

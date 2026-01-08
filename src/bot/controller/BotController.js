@@ -46,7 +46,7 @@ class BotController {
   setupEventHandlers() {
     this.bot.on('chat', (username, message) => {
       if (username === this.bot.username) return
-      if (message.startsWith('/'))
+      if (message.startsWith('/')) return;
       this.handleChatMessage(username, message)
     })
 
