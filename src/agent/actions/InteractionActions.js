@@ -22,6 +22,7 @@ class MoveToUserAction extends BaseAction {
 
       if (this.bot.pathfinder.isMoving()) {
         this.bot.pathfinder.stop()
+        await new Promise(resolve => setTimeout(resolve, 500)) 
       }
 
       const goal = new GoalNear(target.entity.position.x, target.entity.position.y, target.entity.position.z, this.distance)
@@ -191,8 +192,10 @@ class MoveToCoordinatesAction extends BaseAction {
       this.targetPos = { x: args.x, y: args.y, z: args.z }
       this.moving = true
 
+      // Stop any existing pathfinder movement and wait a bit
       if (this.bot.pathfinder.isMoving()) {
         this.bot.pathfinder.stop()
+        await new Promise(resolve => setTimeout(resolve, 500)) // Wait 500ms for pathfinder to stop
       }
 
       // Move to coordinates using GoalNear
@@ -213,7 +216,6 @@ class MoveToCoordinatesAction extends BaseAction {
       this.moving = false
       this.completed = true
       
-      // Handle specific pathfinder errors gracefully
       if (error.message.includes('PathStopped') || error.message.includes('goal was not reached')) {
         return { 
           success: false, 
@@ -257,7 +259,6 @@ class AttackEntityAction extends BaseAction {
       this.range = args.range || 5
       this.attacking = true
 
-      // Find entities of specified type
       const entities = Object.values(this.bot.entities).filter(entity => 
         entity.name && entity.name.toLowerCase().includes(this.entityType.toLowerCase()) &&
         this.bot.entity.position.distanceTo(entity.position) <= this.range
@@ -267,7 +268,6 @@ class AttackEntityAction extends BaseAction {
         return { success: false, error: `No ${this.entityType} found within ${this.range} blocks` }
       }
 
-      // Attack the closest entity
       const target = entities[0]
       await this.bot.attack(target)
       

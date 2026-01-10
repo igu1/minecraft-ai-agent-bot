@@ -74,7 +74,6 @@ class BotController {
     let task;
     if (this.agent.tasks.length > 0 && !this.agent.currentTask) {
       task = this.agent.tasks.shift()
-      console.log(`📋 Processing next task: ${task.name}, remaining: ${this.agent.tasks.length}`)
       this.handleToolCall(task)
       this.timer = 0
     }
@@ -113,7 +112,6 @@ class BotController {
     }
 
     const action = this.actionManager.getAction(func.name)
-    console.log(`Executing tool call: ${func.name}`)
     if (action) {
       try {
         this.agent.setTask(func, action)

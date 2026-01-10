@@ -34,7 +34,7 @@ class FollowAction extends BaseAction {
       }
     }, 1000)
     
-    return { success: true, target: target.username }
+    return { success: true, target: target.username, message: `Ok, I am following ${target.username}!` }
   }
 
   async move(distance) {
